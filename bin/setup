@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+set -vx
+
+rbenv install -s
+gem install --conservative bundler
+bundle install
+
+set +vxeu
+
+# That's all Folks!

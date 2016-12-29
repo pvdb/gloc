@@ -1,0 +1,165 @@
+#!/usr/bin/env ruby -s
+
+require 'ostruct'
+
+source_files = if STDIN.tty?
+  `git rev-parse --show-toplevel &> /dev/null`
+  if $?.success?
+    # we're inside a git repo so
+    # get list of files from git
+    `git ls-files -z #{ARGV.join(' ')}`.split("\0")
+  else
+    # we are not inside a git repo:
+    # find all files in current dir
+    `find #{ARGV.empty? ? Dir.pwd : ARGV.join(' ')} -print0`.split("\0")
+  end
+else
+  # assume we're running it in a pipeline
+  # and read list of filenames from STDIN
+  STDIN.read.split($/).map(&:chomp)
+end
+
+# exclude binary files from stats
+# (files with NUL in file header)
+#
+# much slower alternative:
+#
+# `egrep -q '\\x00' #{file}` ; $? == 0
+#
+# note: git itself uses the first
+# 8,000 characters of a file, but
+# looking at the first 16 is fine
+# for our purposes... for now :-)
+# see buffer_is_binary() function
+source_files.delete_if { |file|
+  (
+    File.extname(file) == '.pdf' || # skip bl**dy PDF documents
+    !File.exist?(file) ||           # skip non-existent paths
+    !File.file?(file)  ||           # skip directories
+    !File.size?(file)  ||           # skip empty files
+    !File.read(file, 16)["\0"].nil? # skip binary files
+  ) && ( $verbose && warn("SKIPPING #{file}...") ; true )
+}
+
+BLANKS = %r{\A\s*\Z}.freeze
+
+COMMENTS = {
+  # FIXME does not work for multi-line comments
+  #       (for the languages that support them)
+  '*.rb'   => %r{\A\s*(#.*)\s*\Z},
+  '*.sh'   => %r{\A\s*(#.*)\s*\Z},
+  '*.xml'  => %r{\A\s*(<!--.*-->)\s*\Z},
+  '*.html' => %r{\A\s*(<!--.*-->)\s*\Z},
+  '*.css'  => %r{\A\s*(/\*.*\*/)\s*\Z},
+  '*.js'   => %r{\A\s*(//.*|/\*.*\*/)\s*\Z},
+}.freeze
+
+source_stats = Hash[source_files.each_with_object({}) { |file, stats|
+  file_ext = '*' + File.extname(file) # e.g. '*.rb' or '*' if no ext!
+  stats_for_ext = begin
+    stats[file_ext] ||= OpenStruct.new({
+      file_count:    0,
+      line_count:    0,
+      blank_count:   0,
+      comment_count: 0,
+    })
+  end
+  source_lines = File.read(file).each_line
+  stats_for_ext.file_count    += 1
+  stats_for_ext.line_count    += source_lines.count
+  stats_for_ext.blank_count   += source_lines.grep(BLANKS).count
+  stats_for_ext.comment_count += source_lines.grep(COMMENTS[file_ext]).count
+}.sort_by { |_, stats| stats.line_count }.reverse]
+
+source_stats.values.each do |stats_for_ext|
+  stats_for_ext.code_count = stats_for_ext.line_count - (
+    stats_for_ext.blank_count + stats_for_ext.comment_count
+  )
+end
+
+source_stats["TOTAL"] = OpenStruct.new({
+  file_count:    source_stats.values.map(&:file_count).reduce(:+),
+  line_count:    source_stats.values.map(&:line_count).reduce(:+),
+  blank_count:   source_stats.values.map(&:blank_count).reduce(:+),
+  comment_count: source_stats.values.map(&:comment_count).reduce(:+),
+  code_count:    source_stats.values.map(&:code_count).reduce(:+),
+})
+
+#
+# JSON formatting for non-TTY output
+#
+
+unless STDOUT.tty?
+  require 'json'
+
+  class OpenStruct
+    def to_json(*args)
+      self.to_h.to_json(args)
+    end
+  end
+
+  puts source_stats.to_json
+
+  exit
+end
+
+#
+# fancy formatting for TTY output
+#
+
+class String
+  def commify
+    gsub(/(\d)(?=(\d{3})+(\..*)?$)/,'\1,')
+  end
+end
+
+class Numeric
+  def commify
+    to_s.commify
+  end
+end
+
+source_stats.values.each do |stats_for_ext|
+  stats_for_ext.file_count    = stats_for_ext.file_count.commify
+  stats_for_ext.line_count    = stats_for_ext.line_count.commify
+  stats_for_ext.blank_count   = stats_for_ext.blank_count.commify
+  stats_for_ext.comment_count = stats_for_ext.comment_count.commify
+  stats_for_ext.code_count    = stats_for_ext.code_count.commify
+end
+
+# widest_file_ext      = source_stats.keys.map(&:length).max
+# widest_file_count    = source_stats.values.map(&:file_count).map(&:length).max
+# widest_line_count    = source_stats.values.map(&:line_count).map(&:length).max
+# widest_blank_count   = source_stats.values.map(&:blank_count).map(&:length).max
+# widest_comment_count = source_stats.values.map(&:comment_count).map(&:length).max
+# widest_code_count    = source_stats.values.map(&:code_count).map(&:length).max
+
+totals = source_stats.delete("TOTAL").to_h.values
+
+TEMPLATE = " %-13s %12s %12s %12s %12s %12s ".freeze
+DIVIDER  = ('-' * 80).freeze # `loc` uses 80 columns
+
+puts format("%s\n#{TEMPLATE}\n%s",
+  DIVIDER,
+  *%w(Language Files Lines Blank Comment Code),
+  DIVIDER,
+)
+
+source_stats.each do |file_ext, stats|
+  puts format(TEMPLATE,
+    file_ext,
+    stats.file_count,
+    stats.line_count,
+    stats.blank_count,
+    stats.comment_count,
+    stats.code_count,
+  )
+end
+
+puts format("%s\n#{TEMPLATE}\n%s",
+  DIVIDER,
+  "Total", *totals,
+  DIVIDER,
+)
+
+# That's all Folks!
