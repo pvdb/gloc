@@ -54,7 +54,7 @@ COMMENTS = {
   '*.js'   => %r{\A\s*(//.*|/\*.*\*/)\s*\Z},
 }.freeze
 
-source_stats = Hash[source_files.each_with_object({}) { |file, stats|
+source_stats = source_files.each_with_object({}) { |file, stats|
   file_ext = '*' + File.extname(file) # e.g. '*.rb' or '*' if no ext!
   stats_for_ext = begin
     stats[file_ext] ||= OpenStruct.new({
@@ -69,13 +69,28 @@ source_stats = Hash[source_files.each_with_object({}) { |file, stats|
   stats_for_ext.line_count    += source_lines.count
   stats_for_ext.blank_count   += source_lines.grep(BLANKS).count
   stats_for_ext.comment_count += source_lines.grep(COMMENTS[file_ext]).count
-}.sort_by { |_, stats| stats.line_count }.reverse]
+}
 
 source_stats.values.each do |stats_for_ext|
   stats_for_ext.code_count = stats_for_ext.line_count - (
     stats_for_ext.blank_count + stats_for_ext.comment_count
   )
 end
+
+sort_metric = case
+  when $files   then :file_count
+  when $lines   then :line_count
+  when $blank   then :blank_count
+  when $comment then :comment_count
+  when $code    then :code_count
+  else :code_count
+end
+
+source_stats = Hash[
+  source_stats.sort_by { |_, stats|
+    stats.send(sort_metric)
+  }.reverse
+]
 
 source_stats["TOTAL"] = OpenStruct.new({
   file_count:    source_stats.values.map(&:file_count).reduce(:+),
