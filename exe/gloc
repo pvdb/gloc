@@ -136,7 +136,7 @@ end
 
 totals = source_stats.delete("TOTAL").to_h.values
 
-TEMPLATE = " %-13s %12s %12s %12s %12s %12s ".freeze
+TEMPLATE = " %-13s %12s %12s %12s %12s %12s".freeze
 DIVIDER  = ('-' * 80).freeze # `loc` uses 80 columns
 
 puts format("%s\n#{TEMPLATE}\n%s",
