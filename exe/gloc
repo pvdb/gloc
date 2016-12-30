@@ -68,6 +68,7 @@ source_stats = source_files.each_with_object({}) { |file, stats|
   stats_for_ext.file_count    += 1
   stats_for_ext.line_count    += source_lines.count
   stats_for_ext.blank_count   += source_lines.grep(BLANKS).count
+  next unless COMMENTS[file_ext] # only scan for comments if a regex exists!
   stats_for_ext.comment_count += source_lines.grep(COMMENTS[file_ext]).count
 }
 
