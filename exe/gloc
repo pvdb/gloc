@@ -2,7 +2,7 @@
 
 require 'ostruct'
 
-source_files = if STDIN.tty?
+source_files = if STDIN.tty? || $tty
   `git rev-parse --show-toplevel &> /dev/null`
   if $?.success?
     # we're inside a git repo so
@@ -89,7 +89,7 @@ source_stats["TOTAL"] = OpenStruct.new({
 # JSON formatting for non-TTY output
 #
 
-unless STDOUT.tty?
+unless STDOUT.tty? || $tty
   require 'json'
 
   class OpenStruct
