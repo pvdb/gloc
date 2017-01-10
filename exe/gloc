@@ -95,11 +95,11 @@ source_stats = Hash[
 ]
 
 source_stats["TOTAL"] = OpenStruct.new({
-  file_count:    source_stats.values.map(&:file_count).reduce(:+),
-  line_count:    source_stats.values.map(&:line_count).reduce(:+),
-  blank_count:   source_stats.values.map(&:blank_count).reduce(:+),
-  comment_count: source_stats.values.map(&:comment_count).reduce(:+),
-  code_count:    source_stats.values.map(&:code_count).reduce(:+),
+  file_count:    source_stats.values.map(&:file_count).reduce(:+)    || 0,
+  line_count:    source_stats.values.map(&:line_count).reduce(:+)    || 0,
+  blank_count:   source_stats.values.map(&:blank_count).reduce(:+)   || 0,
+  comment_count: source_stats.values.map(&:comment_count).reduce(:+) || 0,
+  code_count:    source_stats.values.map(&:code_count).reduce(:+)    || 0,
 })
 
 #
