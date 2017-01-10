@@ -33,10 +33,11 @@ end
 # see buffer_is_binary() function
 source_files.delete_if { |file|
   (
-    File.extname(file) == '.pdf' || # skip bl**dy PDF documents
-    !File.exist?(file) ||           # skip non-existent paths
-    !File.file?(file)  ||           # skip directories
-    !File.size?(file)  ||           # skip empty files
+    File.extname(file) == '.pdf'      || # skip bl**dy PDF documents
+    File.basename(file) =~ /\A\..*\z/ || # skip hidden ".*" files
+    !File.exist?(file)                || # skip non-existent paths
+    !File.file?(file)                 || # skip directories
+    !File.size?(file)                 || # skip empty files
     !File.read(file, 16)["\0"].nil? # skip binary files
   ) && ( $verbose && warn("SKIPPING #{file}...") ; true )
 }
