@@ -99,6 +99,7 @@ The results are sorted by "lines of code" by default _(with "lines of code" defi
 
 * identify comment-only lines for a lot more languages
 * support more file encodings (not just `UTF-8` and `ISO-8859-1`)
+* parse shebang lines for scripts without a file extension
 
 * (?) installation via Homebrew
 * (?) convert script to Perl for performance

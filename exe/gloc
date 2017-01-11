@@ -31,6 +31,7 @@ end
 # looking at the first 16 is fine
 # for our purposes... for now :-)
 # see buffer_is_binary() function
+# in the "git" source repository!
 source_files.delete_if { |file|
   (
     File.extname(file) == '.pdf'      || # skip bl**dy PDF documents
@@ -38,7 +39,7 @@ source_files.delete_if { |file|
     !File.exist?(file)                || # skip non-existent paths
     !File.file?(file)                 || # skip directories
     !File.size?(file)                 || # skip empty files
-    !File.read(file, 16)["\0"].nil? # skip binary files
+    !File.read(file, 16)["\0"].nil?      # skip binary files
   ) && ( $verbose && warn("SKIPPING #{file}...") ; true )
 }
 
@@ -65,8 +66,11 @@ source_stats = source_files.each_with_object({}) { |file, stats|
       comment_count: 0,
     })
   end
-  file_content = File.read(file, :encoding => 'UTF-8') # FIXME what about other encodings?
-  file_content = File.read(file, :encoding => 'ISO-8859-1') unless content.valid_encoding?
+  file_content = File.read(file, :encoding => 'UTF-8')
+  unless file_content.valid_encoding?
+    file_content = File.read(file, :encoding => 'ISO-8859-1')
+    # FIXME what about file encodings other than these two???
+  end
   source_lines = file_content.each_line
   stats_for_ext.file_count    += 1
   stats_for_ext.line_count    += source_lines.count
