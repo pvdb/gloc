@@ -6,14 +6,14 @@
 * it doesn't ignore files just because it doesn't recognise them _(ie. cannot correctly guess their language)_
 * in a git repo, it processes `$( git ls-files )` by default
 * in a non-git repo, it processes `$( find . -type f)` by default
-* it generates human-friendly, `loc`-alike output
+* it generates human-friendly, `(c)loc`-alike output
 * it is Unix pipeline friendly, by design:
    * it reads the list of filenames to process from `stdin` if `[ ! -t 0 ]`
    * it writes machine-parsable JSON output to `stdout` if `[ ! -t 1 ]`
 
 ## Example
 
-For the popular Ruby on Rails framework, `gloc` generates the following `loc`-alike output:
+For the popular Ruby on Rails framework, `gloc` generates the following `(c)loc`-alike output:
 
     --------------------------------------------------------------------------------
      Language             Files        Lines        Blank      Comment         Code
@@ -95,12 +95,11 @@ The results are sorted by "lines of code" by default _(with "lines of code" defi
     gloc -comment   # sort by the number of comment lines
     gloc -code      # sort by lines of code (default)
 
-## Known Issues
+## Known Issues and Possible Enhancements
 
 * identify comment-only lines for a lot more languages
 * support more file encodings (not just `UTF-8` and `ISO-8859-1`)
 * parse shebang lines for scripts without a file extension
-
 * (?) installation via Homebrew
 * (?) convert script to Perl for performance
 
