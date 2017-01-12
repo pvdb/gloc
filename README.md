@@ -61,6 +61,10 @@ For various reasons, none of these existing utilities to count lines of code are
 * [Aaronepower/tokei](https://github.com/Aaronepower/tokei)
 * [SLOCCount](http://www.dwheeler.com/sloccount/)
 
+And it **definitely** isn't:
+
+* [LocMetrics](http://www.locmetrics.com/)
+
 ## Installation
 
     gem install gloc
