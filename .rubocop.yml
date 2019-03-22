@@ -1,0 +1,41 @@
+AllCops:
+  Exclude:
+    - 'exe/gloc'
+
+Lint/HandleExceptions:
+  Enabled: false
+
+Metrics/AbcSize:
+  Enabled: false
+Metrics/ClassLength:
+  Enabled: false
+Metrics/LineLength:
+  Enabled: false
+Metrics/MethodLength:
+  Enabled: false
+Metrics/ModuleLength:
+  Enabled: false
+
+Style/AccessModifierDeclarations:
+  Enabled: false
+Style/BlockDelimiters:
+  Enabled: false
+Style/Documentation:
+  Enabled: false
+Style/FrozenStringLiteralComment:
+  Enabled: false
+Style/Lambda:
+  Enabled: false
+Style/NestedTernaryOperator:
+  Enabled: false
+Style/Semicolon:
+  Enabled: true
+  AllowAsExpressionSeparator: true
+Style/SingleLineMethods:
+  Enabled: false
+Style/TrailingCommaInArguments:
+  Enabled: false
+Style/TrailingCommaInArrayLiteral:
+  Enabled: false
+Style/TrailingCommaInHashLiteral:
+  Enabled: false

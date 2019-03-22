@@ -1,6 +1,10 @@
 require 'test_helper'
 
 class GLOCTest < Minitest::Test
+  def test_that_it_has_a_name
+    refute_nil ::GLOC::NAME
+  end
+
   def test_that_it_has_a_version_number
     refute_nil ::GLOC::VERSION
   end
