@@ -1,10 +1,22 @@
 #!/usr/bin/env ruby -s
 
+#
+# rubocop:disable Layout/AlignHash
+# rubocop:disable Layout/ElseAlignment
+# rubocop:disable Layout/EndAlignment
+# rubocop:disable Layout/IndentationWidth
+#
+# rubocop:disable Style/EmptyCaseCondition
+# rubocop:disable Style/GlobalVars
+# rubocop:disable Style/RegexpLiteral
+#
+
+require 'English'
 require 'ostruct'
 
 source_files = if STDIN.tty? || $tty
   `git rev-parse --show-toplevel &> /dev/null`
-  if $?.success?
+  if $CHILD_STATUS.success?
     # we're inside a git repo so
     # get list of files from git
     `git ls-files -z #{ARGV.join(' ')}`.split("\0")
@@ -16,7 +28,7 @@ source_files = if STDIN.tty? || $tty
 else
   # assume we're running it in a pipeline
   # and read list of filenames from STDIN
-  STDIN.read.split($/).map(&:chomp)
+  STDIN.read.split($RS).map(&:chomp)
 end
 
 # exclude binary files from stats
@@ -40,14 +52,14 @@ source_files.delete_if { |file|
     !File.file?(file)                 || # skip directories
     !File.size?(file)                 || # skip empty files
     !File.read(file, 16)["\0"].nil?      # skip binary files
-  ) && ( $verbose && warn("SKIPPING #{file}...") ; true )
+  ) && ($verbose && warn("SKIPPING #{file}..."); true)
 }
 
-BLANKS = %r{\A\s*\Z}.freeze
+BLANKS = Hash.new(%r{\A\s*\Z}.freeze) # TODO: ext-specific regex for blanks?
 
 COMMENTS = {
-  # FIXME does not work for multi-line comments
-  #       (for the languages that support them)
+  # FIXME: does not work for multi-line comments
+  #        (for the languages that support them)
   '*.rb'   => %r{\A\s*(#.*)\s*\Z},
   '*.sh'   => %r{\A\s*(#.*)\s*\Z},
   '*.xml'  => %r{\A\s*(<!--.*-->)\s*\Z},
@@ -56,57 +68,71 @@ COMMENTS = {
   '*.js'   => %r{\A\s*(//.*|/\*.*\*/)\s*\Z},
 }.freeze
 
-source_stats = source_files.each_with_object({}) { |file, stats|
-  file_ext = '*' + File.extname(file) # e.g. '*.rb' or '*' if no ext!
-  stats_for_ext = begin
-    stats[file_ext] ||= OpenStruct.new({
-      file_count:    0,
-      line_count:    0,
-      blank_count:   0,
-      comment_count: 0,
-    })
-  end
-  file_content = File.read(file, :encoding => 'UTF-8')
+STATS_FOR_FILE = Hash.new do |stats_for_file, (file, blank_re, comment_re)|
+  file_content = File.read(file, encoding: 'UTF-8')
   unless file_content.valid_encoding?
-    file_content = File.read(file, :encoding => 'ISO-8859-1')
-    # FIXME what about file encodings other than these two???
+    file_content = File.read(file, encoding: 'ISO-8859-1')
+    # FIXME: what about file encodings other than these two???
   end
-  source_lines = file_content.each_line
-  stats_for_ext.file_count    += 1
-  stats_for_ext.line_count    += source_lines.count
-  stats_for_ext.blank_count   += source_lines.grep(BLANKS).count
-  next unless COMMENTS[file_ext] # only scan for comments if a regex exists!
-  stats_for_ext.comment_count += source_lines.grep(COMMENTS[file_ext]).count
-}
 
-source_stats.values.each do |stats_for_ext|
-  stats_for_ext.code_count = stats_for_ext.line_count - (
-    stats_for_ext.blank_count + stats_for_ext.comment_count
+  lines = file_content.each_line
+
+  stats_for_file[[file, blank_re, comment_re]] = OpenStruct.new(
+    line_count:    line_count = lines.count,
+    blank_count:   blank_count = lines.grep(blank_re).count,
+    comment_count: comment_count = lines.grep(comment_re).count,
+    code_count:    (line_count - blank_count - comment_count),
   )
 end
 
-sort_metric = case
-  when $files   then :file_count
-  when $lines   then :line_count
-  when $blank   then :blank_count
-  when $comment then :comment_count
-  when $code    then :code_count
-  else :code_count
+STATS_FOR = Hash.new do |stats_for_ext, ext|
+  stats_for_ext[ext] = OpenStruct.new(
+    file_count:    0,
+    line_count:    0,
+    blank_count:   0,
+    comment_count: 0,
+    code_count:    0,
+  )
 end
 
+source_files.each do |file|
+  ext = '*' + File.extname(file) # e.g. '*.rb' or '*' if no ext!
+
+  blank_regex   = BLANKS[ext]
+  comment_regex = COMMENTS[ext]
+
+  stats_for_file = STATS_FOR_FILE[[file, blank_regex, comment_regex]]
+  stats_for_ext  = STATS_FOR[ext]
+
+  stats_for_ext.file_count    += 1
+  stats_for_ext.line_count    += stats_for_file.line_count
+  stats_for_ext.blank_count   += stats_for_file.blank_count
+  stats_for_ext.comment_count += stats_for_file.comment_count
+  stats_for_ext.code_count    += stats_for_file.code_count
+end
+
+sort_metric = case
+              when $files   then :file_count
+              when $lines   then :line_count
+              when $blank   then :blank_count
+              when $comment then :comment_count
+              when $code    then :code_count
+              else :code_count
+              end
+
 source_stats = Hash[
-  source_stats.sort_by { |_, stats|
+  STATS_FOR.sort_by { |_, stats|
     stats.send(sort_metric)
   }.reverse
 ]
 
-source_stats["TOTAL"] = OpenStruct.new({
+source_stats['TOTAL'] = OpenStruct.new(
   file_count:    source_stats.values.map(&:file_count).reduce(:+)    || 0,
   line_count:    source_stats.values.map(&:line_count).reduce(:+)    || 0,
   blank_count:   source_stats.values.map(&:blank_count).reduce(:+)   || 0,
   comment_count: source_stats.values.map(&:comment_count).reduce(:+) || 0,
   code_count:    source_stats.values.map(&:code_count).reduce(:+)    || 0,
-})
+)
 
 #
 # JSON formatting for non-TTY output
@@ -117,7 +143,7 @@ unless STDOUT.tty? || $tty
 
   class OpenStruct
     def to_json(*args)
-      self.to_h.to_json(args)
+      to_h.to_json(args)
     end
   end
 
@@ -132,7 +158,7 @@ end
 
 class String
   def commify
-    gsub(/(\d)(?=(\d{3})+(\..*)?$)/,'\1,')
+    gsub(/(\d)(?=(\d{3})+(\..*)?$)/, '\1,')
   end
 end
 
@@ -157,19 +183,17 @@ end
 # widest_comment_count = source_stats.values.map(&:comment_count).map(&:length).max
 # widest_code_count    = source_stats.values.map(&:code_count).map(&:length).max
 
-totals = source_stats.delete("TOTAL").to_h.values
+DIVIDER  = ('-' * 80) # because loc uses 80 columns
+TEMPLATE = ' %-13s %12s %12s %12s %12s %12s'.freeze
 
-TEMPLATE = " %-13s %12s %12s %12s %12s %12s".freeze
-DIVIDER  = ('-' * 80).freeze # `loc` uses 80 columns
-
-puts format("%s\n#{TEMPLATE}\n%s",
-  DIVIDER,
-  *%w(Language Files Lines Blank Comment Code),
-  DIVIDER,
+puts format(
+  "#{DIVIDER}\n#{TEMPLATE}\n#{DIVIDER}",
+  'Language', 'Files', 'Lines', 'Blank', 'Comment', 'Code'
 )
 
 source_stats.each do |file_ext, stats|
-  puts format(TEMPLATE,
+  puts format(
+    TEMPLATE,
     file_ext,
     stats.file_count,
     stats.line_count,
@@ -179,10 +203,20 @@ source_stats.each do |file_ext, stats|
   )
 end
 
-puts format("%s\n#{TEMPLATE}\n%s",
-  DIVIDER,
-  "Total", *totals,
-  DIVIDER,
+puts format(
+  "#{DIVIDER}\n#{TEMPLATE}\n#{DIVIDER}",
+  'Total', *source_stats.delete('TOTAL').to_h.values
 )
+
+#
+# rubocop:enable Style/RegexpLiteral
+# rubocop:enable Style/GlobalVars
+# rubocop:enable Style/EmptyCaseCondition
+#
+# rubocop:enable Layout/IndentationWidth
+# rubocop:enable Layout/EndAlignment
+# rubocop:enable Layout/ElseAlignment
+# rubocop:enable Layout/AlignHash
+#
 
 # That's all Folks!

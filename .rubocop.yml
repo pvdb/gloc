@@ -1,7 +1,3 @@
-AllCops:
-  Exclude:
-    - 'exe/gloc'
-
 Lint/HandleExceptions:
   Enabled: false
 
