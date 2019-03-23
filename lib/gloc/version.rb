@@ -1,6 +1,6 @@
 module GLOC
   NAME = 'gloc'.freeze
-  VERSION = '0.3.1'.freeze
+  VERSION = '0.4.0'.freeze
 
   def self.version
     "#{NAME} v#{VERSION}"
