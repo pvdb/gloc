@@ -120,6 +120,12 @@ sort_metric = case
               else :code_count
               end
 
+file_stats = Hash[
+  STATS_FOR_FILE.sort_by { |_, stats|
+    stats.send(sort_metric)
+  }.reverse
+]
+
 source_stats = Hash[
   STATS_FOR.sort_by { |_, stats|
     stats.send(sort_metric)
@@ -176,13 +182,6 @@ source_stats.values.each do |stats_for_ext|
   stats_for_ext.code_count    = stats_for_ext.code_count.commify
 end
 
-# widest_file_ext      = source_stats.keys.map(&:length).max
-# widest_file_count    = source_stats.values.map(&:file_count).map(&:length).max
-# widest_line_count    = source_stats.values.map(&:line_count).map(&:length).max
-# widest_blank_count   = source_stats.values.map(&:blank_count).map(&:length).max
-# widest_comment_count = source_stats.values.map(&:comment_count).map(&:length).max
-# widest_code_count    = source_stats.values.map(&:code_count).map(&:length).max
-
 DIVIDER  = ('-' * 80) # because loc uses 80 columns
 TEMPLATE = ' %-13s %12s %12s %12s %12s %12s'.freeze
 
@@ -207,6 +206,30 @@ puts format(
   "#{DIVIDER}\n#{TEMPLATE}\n#{DIVIDER}",
   'Total', *source_stats.delete('TOTAL').to_h.values
 )
+
+exit unless $visual # show summary stats only
+
+require 'rainbow'
+require 'io/console'
+
+max_line_count   = file_stats.values.map(&:line_count).max
+longest_filename = file_stats.keys.map(&:first).map(&:length).max
+_, console_width = IO.console.winsize
+available_width  = Float(console_width - longest_filename - 5)
+
+file_stats.each_pair do |(file, _, _), stats|
+  code_width    = (available_width * stats.code_count / max_line_count)
+  comment_width = (available_width * stats.comment_count / max_line_count)
+  blank_width   = (available_width * stats.blank_count / max_line_count)
+
+  puts format(
+    " %-#{longest_filename}<file>s | %<code>s%<comment>s%<blank>s",
+    file: file,
+    code:    Rainbow('+' * code_width).green,
+    comment: Rainbow('-' * comment_width).red,
+    blank:   Rainbow('⍽' * blank_width).blue,
+  )
+end
 
 #
 # rubocop:enable Style/RegexpLiteral
