@@ -99,6 +99,22 @@ The results are sorted by "lines of code" by default _(with "lines of code" defi
     gloc -comment   # sort by the number of comment lines
     gloc -code      # sort by lines of code (default)
 
+## Processing
+
+When `gloc`'s STDOUT isn't a TTY, it outputs the LoC stats in JSON format, for further parsing and processing.
+
+This also means you can pretty-print the LoC stats as follows:
+
+    gloc | jq
+
+... which uses the [the indispensable jq utility][jq] (`brew install jq`) for processing the JSON output.
+
+To "force" the typical TTY output even when STDOUT isn't a TTY, you can use the `-tty` option as follows:
+
+    gloc -tty | pbcopy
+
+... which copies the non-JSON version of the LoC stats to the clipboard.
+
 ## Known Issues and Possible Enhancements
 
 * identify comment-only lines for a lot more languages
