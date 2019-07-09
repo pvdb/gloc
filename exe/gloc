@@ -144,7 +144,7 @@ source_stats['TOTAL'] = OpenStruct.new(
 # JSON formatting for non-TTY output
 #
 
-unless STDOUT.tty? || $tty
+unless STDOUT.tty? || $tty || $visual
   require 'json'
 
   class OpenStruct
@@ -158,79 +158,83 @@ unless STDOUT.tty? || $tty
   exit
 end
 
-#
-# fancy formatting for TTY output
-#
-
-class String
-  def commify
-    gsub(/(\d)(?=(\d{3})+(\..*)?$)/, '\1,')
+unless $visual
+  class String
+    def commify
+      gsub(/(\d)(?=(\d{3})+(\..*)?$)/, '\1,')
+    end
   end
-end
 
-class Numeric
-  def commify
-    to_s.commify
+  class Numeric
+    def commify
+      to_s.commify
+    end
   end
-end
 
-source_stats.values.each do |stats_for_ext|
-  stats_for_ext.file_count    = stats_for_ext.file_count.commify
-  stats_for_ext.line_count    = stats_for_ext.line_count.commify
-  stats_for_ext.blank_count   = stats_for_ext.blank_count.commify
-  stats_for_ext.comment_count = stats_for_ext.comment_count.commify
-  stats_for_ext.code_count    = stats_for_ext.code_count.commify
-end
+  #
+  # fancy formatting for TTY output
+  #
 
-DIVIDER  = ('-' * 80) # because loc uses 80 columns
-TEMPLATE = ' %-13s %12s %12s %12s %12s %12s'.freeze
+  source_stats.values.each do |stats_for_ext|
+    stats_for_ext.file_count    = stats_for_ext.file_count.commify
+    stats_for_ext.line_count    = stats_for_ext.line_count.commify
+    stats_for_ext.blank_count   = stats_for_ext.blank_count.commify
+    stats_for_ext.comment_count = stats_for_ext.comment_count.commify
+    stats_for_ext.code_count    = stats_for_ext.code_count.commify
+  end
 
-puts format(
-  "#{DIVIDER}\n#{TEMPLATE}\n#{DIVIDER}",
-  'Language', 'Files', 'Lines', 'Blank', 'Comment', 'Code'
-)
-
-source_stats.each do |file_ext, stats|
-  next if file_ext == 'TOTAL'
+  DIVIDER  = ('-' * 80) # because loc uses 80 columns
+  TEMPLATE = ' %-13s %12s %12s %12s %12s %12s'.freeze
 
   puts format(
-    TEMPLATE,
-    file_ext,
-    stats.file_count,
-    stats.line_count,
-    stats.blank_count,
-    stats.comment_count,
-    stats.code_count,
+    "#{DIVIDER}\n#{TEMPLATE}\n#{DIVIDER}",
+    'Language', 'Files', 'Lines', 'Blank', 'Comment', 'Code'
+  )
+
+  source_stats.each do |file_ext, stats|
+    next if file_ext == 'TOTAL'
+
+    puts format(
+      TEMPLATE,
+      file_ext,
+      stats.file_count,
+      stats.line_count,
+      stats.blank_count,
+      stats.comment_count,
+      stats.code_count,
+    )
+  end
+
+  puts format(
+    "#{DIVIDER}\n#{TEMPLATE}\n#{DIVIDER}",
+    'Total', *source_stats.fetch('TOTAL').to_h.values
   )
 end
 
-puts format(
-  "#{DIVIDER}\n#{TEMPLATE}\n#{DIVIDER}",
-  'Total', *source_stats.fetch('TOTAL').to_h.values
-)
+if $visual
+  require 'rainbow'
+  require 'io/console'
 
-exit unless $visual # show summary stats only
+  max_line_count   = file_stats.values.map(&:line_count).max
+  longest_filename = file_stats.keys.map(&:first).map(&:length).max
+  _, console_width = IO.console.winsize
+  available_width  = Float(console_width - longest_filename - 5)
 
-require 'rainbow'
-require 'io/console'
+  abort 'Terminal not wide enough... aborting!' if available_width.negative?
 
-max_line_count   = file_stats.values.map(&:line_count).max
-longest_filename = file_stats.keys.map(&:first).map(&:length).max
-_, console_width = IO.console.winsize
-available_width  = Float(console_width - longest_filename - 5)
+  file_stats.each_pair do |(file, _, _), stats|
+    code_width    = (available_width * stats.code_count / max_line_count)
+    comment_width = (available_width * stats.comment_count / max_line_count)
+    blank_width   = (available_width * stats.blank_count / max_line_count)
 
-file_stats.each_pair do |(file, _, _), stats|
-  code_width    = (available_width * stats.code_count / max_line_count)
-  comment_width = (available_width * stats.comment_count / max_line_count)
-  blank_width   = (available_width * stats.blank_count / max_line_count)
-
-  puts format(
-    " %-#{longest_filename}<file>s | %<code>s%<comment>s%<blank>s",
-    file: file,
-    code:    Rainbow('+' * code_width).green,
-    comment: Rainbow('-' * comment_width).red,
-    blank:   Rainbow('⍽' * blank_width).blue,
-  )
+    puts format(
+      " %-#{longest_filename}<file>s | %<code>s%<comment>s%<blank>s",
+      file: file,
+      code:    Rainbow('+' * code_width).green,
+      comment: Rainbow('-' * comment_width).red,
+      blank:   Rainbow('⍽' * blank_width).blue,
+    )
+  end
 end
 
 #
