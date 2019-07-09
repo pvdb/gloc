@@ -232,7 +232,7 @@ if $visual
       file: file,
       code:    Rainbow('+' * code_width).green,
       comment: Rainbow('-' * comment_width).red,
-      blank:   Rainbow('⍽' * blank_width).blue,
+      blank:   Rainbow('_' * blank_width).blue,
     )
   end
 end
