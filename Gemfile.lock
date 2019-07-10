@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    gloc (0.6.0)
+    gloc (0.7.0)
       rainbow (~> 3.0)
 
 GEM
