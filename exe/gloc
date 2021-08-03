@@ -1,10 +1,12 @@
 #!/usr/bin/env ruby -s
 
 #
-# rubocop:disable Layout/AlignHash
+# rubocop:disable Layout/HashAlignment
 # rubocop:disable Layout/ElseAlignment
 # rubocop:disable Layout/EndAlignment
 # rubocop:disable Layout/IndentationWidth
+#
+# rubocop:disable Lint/DuplicateBranch:
 #
 # rubocop:disable Style/EmptyCaseCondition
 # rubocop:disable Style/GlobalVars
@@ -14,7 +16,7 @@
 require 'English'
 require 'ostruct'
 
-source_files = if STDIN.tty? || $tty
+source_files = if $stdin.tty? || $tty
   `git rev-parse --show-toplevel &> /dev/null`
   if $CHILD_STATUS.success?
     # we're inside a git repo so
@@ -27,8 +29,8 @@ source_files = if STDIN.tty? || $tty
   end
 else
   # assume we're running it in a pipeline
-  # and read list of filenames from STDIN
-  STDIN.read.split($RS).map(&:chomp)
+  # and read list of filenames from $stdin
+  $stdin.read.split($RS).map(&:chomp)
 end
 
 # exclude binary files from stats
@@ -96,7 +98,7 @@ STATS_FOR = Hash.new do |stats_for_ext, ext|
 end
 
 source_files.each do |file|
-  ext = '*' + File.extname(file) # e.g. '*.rb' or '*' if no ext!
+  ext = File.extname(file).prepend('*') # e.g. '*.rb' or '*' if no ext!
 
   blank_regex   = BLANKS[ext]
   comment_regex = COMMENTS[ext]
@@ -120,17 +122,13 @@ sort_metric = case
               else :code_count
               end
 
-file_stats = Hash[
-  STATS_FOR_FILE.sort_by { |_, stats|
-    stats.send(sort_metric)
-  }.reverse
-]
+file_stats = STATS_FOR_FILE.sort_by { |_, stats|
+  stats.send(sort_metric)
+}.reverse.to_h
 
-source_stats = Hash[
-  STATS_FOR.sort_by { |_, stats|
-    stats.send(sort_metric)
-  }.reverse
-]
+source_stats = STATS_FOR.sort_by { |_, stats|
+  stats.send(sort_metric)
+}.reverse.to_h
 
 source_stats['TOTAL'] = OpenStruct.new(
   file_count:    source_stats.values.map(&:file_count).reduce(:+)    || 0,
@@ -144,7 +142,7 @@ source_stats['TOTAL'] = OpenStruct.new(
 # JSON formatting for non-TTY output
 #
 
-unless STDOUT.tty? || $tty || $visual
+unless $stdout.tty? || $tty || $visual
   require 'json'
 
   class OpenStruct
@@ -175,7 +173,7 @@ unless $visual
   # fancy formatting for TTY output
   #
 
-  source_stats.values.each do |stats_for_ext|
+  source_stats.each_value do |stats_for_ext|
     stats_for_ext.file_count    = stats_for_ext.file_count.commify
     stats_for_ext.line_count    = stats_for_ext.line_count.commify
     stats_for_ext.blank_count   = stats_for_ext.blank_count.commify
@@ -242,10 +240,12 @@ end
 # rubocop:enable Style/GlobalVars
 # rubocop:enable Style/EmptyCaseCondition
 #
+# rubocop:enable Lint/DuplicateBranch:
+#
 # rubocop:enable Layout/IndentationWidth
 # rubocop:enable Layout/EndAlignment
 # rubocop:enable Layout/ElseAlignment
-# rubocop:enable Layout/AlignHash
+# rubocop:enable Layout/HashAlignment
 #
 
 # That's all Folks!
