@@ -1,3 +1,7 @@
+require:
+  - rubocop-rake
+  - rubocop-minitest
+
 Lint/SuppressedException:
   Enabled: false
 

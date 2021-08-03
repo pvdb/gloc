@@ -1,5 +1,6 @@
 # rubocop:disable Style/SymbolArray
 # rubocop:disable Style/HashSyntax
+# rubocop:disable Rake/Desc
 
 require 'bundler/gem_tasks'
 
@@ -34,5 +35,6 @@ end
 
 Rake::Task['build'].enhance([:default, :ready])
 
+# rubocop:enable Rake/Desc
 # rubocop:enable Style/HashSyntax
 # rubocop:enable Style/SymbolArray
