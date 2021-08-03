@@ -47,15 +47,15 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  bundler
+  bundler (~> 2.2)
   gloc!
-  minitest
-  pry
-  pry-rescue
-  rake
-  rubocop
-  rubocop-minitest
-  rubocop-rake
+  minitest (~> 5.14)
+  pry (~> 0.14)
+  pry-rescue (~> 1.5)
+  rake (~> 13.0)
+  rubocop (~> 1.18)
+  rubocop-minitest (~> 0.14)
+  rubocop-rake (~> 0.6)
 
 BUNDLED WITH
    2.2.25

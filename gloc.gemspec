@@ -26,12 +26,12 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'rainbow', '~> 3.0'
 
-  spec.add_development_dependency 'bundler'
-  spec.add_development_dependency 'minitest'
-  spec.add_development_dependency 'pry'
-  spec.add_development_dependency 'pry-rescue'
-  spec.add_development_dependency 'rake'
-  spec.add_development_dependency 'rubocop'
-  spec.add_development_dependency 'rubocop-minitest'
-  spec.add_development_dependency 'rubocop-rake'
+  spec.add_development_dependency 'bundler', '~> 2.2'
+  spec.add_development_dependency 'minitest', '~> 5.14'
+  spec.add_development_dependency 'pry', '~> 0.14'
+  spec.add_development_dependency 'pry-rescue', '~> 1.5'
+  spec.add_development_dependency 'rake', '~> 13.0'
+  spec.add_development_dependency 'rubocop', '~> 1.18'
+  spec.add_development_dependency 'rubocop-minitest', '~> 0.14'
+  spec.add_development_dependency 'rubocop-rake', '~> 0.6'
 end
