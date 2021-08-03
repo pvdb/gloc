@@ -1,11 +1,9 @@
-Lint/HandleExceptions:
+Lint/SuppressedException:
   Enabled: false
 
 Metrics/AbcSize:
   Enabled: false
 Metrics/ClassLength:
-  Enabled: false
-Metrics/LineLength:
   Enabled: false
 Metrics/MethodLength:
   Enabled: false
@@ -35,3 +33,6 @@ Style/TrailingCommaInArrayLiteral:
   Enabled: false
 Style/TrailingCommaInHashLiteral:
   Enabled: false
+
+AllCops:
+  NewCops: enable
