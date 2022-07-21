@@ -1,11 +1,14 @@
-# Gloc(k) Model 17 - 9mm
+# yet another code counter: `gloc`
 
-`gloc` is an opinionated utility to count lines of code.
+`gloc` is [yet another code counter](https://github.com/search?q=%22code+counter%22), with some differences and enhancements compared to similar utilities.
 
-* it groups files based on their file extension, instead of trying to guess their language and grouping them that way
-* it doesn't ignore files just because it doesn't recognise them _(ie. cannot correctly guess their language)_
+Most importantly, it simply groups files based on their file extension, unlike other code counters that group files based on the - oftentimes incorrect - language of their content _(as determined by whatever "language detection" heuristics these tools may use)_.
+
+Further differences and enhancements:
+
+* it doesn't ignore files just because it doesn't recognise them _(ie. cannot correctly determine or guess their language)_
 * in a git repo, it processes `$( git ls-files )` by default
-* in a non-git repo, it processes `$( find . -type f)` by default
+* in a non-git directory, it processes `$( find . -type f )` by default
 * it generates human-friendly, `(c)loc`-alike output
 * it is Unix pipeline friendly, by design:
    * it reads the list of filenames to process from `stdin` if `[ ! -t 0 ]`
@@ -107,7 +110,7 @@ This also means you can pretty-print the LoC stats as follows:
 
     gloc | jq
 
-... which uses the [the indispensable jq utility][jq] (`brew install jq`) for processing the JSON output.
+... which uses the [the `jq` utility](https://stedolan.github.io/jq/) for processing the JSON output.
 
 To "force" the typical TTY output even when STDOUT isn't a TTY, you can use the `-tty` option as follows:
 
@@ -119,7 +122,7 @@ To "force" the typical TTY output even when STDOUT isn't a TTY, you can use the 
 
 * identify comment-only lines for a lot more languages
 * support more file encodings (not just `UTF-8` and `ISO-8859-1`)
-* parse shebang lines for scripts without a file extension
+* (?) parse shebang lines for scripts without a file extension
 * (?) installation via Homebrew
 * (?) convert script to Perl for performance
 
